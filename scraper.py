@@ -46,6 +46,7 @@ def daterange(start_date, end_date):
 def get_date_summary(rows, formatted_date):
     with open('summary.csv', 'a') as f:
         writer = csv.writer(f)
+        description_fragment = ""
         for row in rows[2:]:
             out = [formatted_date]
             cells = row.xpath("td")
@@ -64,10 +65,14 @@ def get_date_summary(rows, formatted_date):
                 # *out
                 # )
                 # c.commit()
+                if len(description_fragment) > 0:
+                    out[3] = "{}. {}".format(description_fragment, out[3])
+                description_fragment = ""
                 print(out)
                 writer.writerow(out)
             else:
-                print("Skipping empty row")
+                if len(cells) > 1:
+                    description_fragment = cells[1].text_content()
 
 def get_voting_summary(rows, id):
     with open('votes.csv', 'a') as f:
