@@ -4,12 +4,32 @@
 # called "data.sqlite" in the current working directory which has at least a table
 # called "data".
 
-import pprint
 from lxml import html
 from datetime import timedelta, date
 import re
+import sqlite3
 
-pp = pprint.PrettyPrinter(indent=2)
+conn = sqlite3.connect('data.sqlite')
+c = conn.cursor
+c.execute("""drop table if exists data""")
+c.execute("""drop table if exists votes""")
+conn.commit()
+c.execute("""create table data (
+        date    int     primary key not NULL,
+        time    text,
+        vote    int,
+        description text,
+        presents    int,
+        yes         int,
+        no          int,
+        abstention  int,
+        no_vote     int)""")
+c.execute("""create table votes (
+        id    int     primary key not NULL,
+        name    text,
+        group   text,
+        vote    text)""")
+conn.commit()
 
 min_date = date(2016, 12, 11)
 max_date = date(2017, 9, 16)
@@ -21,29 +41,42 @@ def daterange(start_date, end_date):
     for n in range(int ((end_date - start_date).days)):
         yield start_date + timedelta(n)
 
-def get_date_summary(rows):
+def get_date_summary(rows, formatted_date):
+    for row in rows:
+        out = []
+        cells = row.xpath("td")
+        if cells[0].text_content():
+            for td in cells:
+                txt = td.text_content().replace("\n", " ").replace("\s+", " ").strip()
+                out.append(txt)
+                a = td.xpath("a")
+                if a:
+                    link = a[0].attrib['href']
+                    pattern = re.compile("^.*evot\.nominal\?idv=.*$")
+                    if pattern.match(link):
+                        ids.append((re.search("evot\.nominal\?idv=(.*)\&idl=2", link).group(1)))
+            c.execute("insert into data values ({}, {}, {}, {}, {}, {}, {}, {}, {})").format(
+            formatted_date,
+            *out
+            )
+            # print(out)
+            c.commit()
+        else:
+            print("Skipping empty row")
+
+def get_voting_summary(rows, id):
     for row in rows:
         out = []
         cells = row.xpath("td")
         for td in cells:
             txt = td.text_content().replace("\n", " ").replace("\s+", " ").strip()
             out.append(txt)
-            a = td.xpath("a")
-            if a:
-                link = a[0].attrib['href']
-                pattern = re.compile("^.*evot\.nominal\?idv=.*$")
-                if pattern.match(link):
-                    ids.append((re.search("evot\.nominal\?idv=(.*)\&idl=2", link).group(1)))
-        print(out)
-
-def get_voting_summary(rows):
-    for row in rows:
-        output = []
-        cells = row.xpath("td")
-        for td in cells:
-            txt = td.text_content().replace("\n", " ").replace("\s+", " ").strip()
-            output.append(txt)
-        print(output)
+        # print(out)
+        c.execute("insert into votes values ({}, {}, {}, {})").format(
+        id,
+        *out
+        )
+        c.commit()
 
 def get_summaries():
     for single_date in daterange(min_date, max_date):
@@ -54,7 +87,7 @@ def get_summaries():
         rows = doc.xpath("//*[@id='pageContent']/table/tr")
         if len(rows) > 2:
             print("Found {}".format(formatted_date))
-            get_date_summary(rows)
+            get_date_summary(rows, formatted_date)
 
 def get_votes(ids):
     for id in ids:
@@ -65,7 +98,7 @@ def get_votes(ids):
         if len(rows) < 2:
             print("Shit happened, less than two rows")
         else:
-            get_voting_summary(rows)
+            get_voting_summary(rows, id)
 
 
 print("Gettings summaries")
@@ -73,3 +106,5 @@ get_summaries()
 
 print("Gettings votes")
 get_votes(ids)
+
+c.close()
