@@ -9,6 +9,10 @@ from datetime import timedelta, date
 import re
 # import sqlite3
 import csv
+import os
+import scraperwiki
+
+os.environ["SCRAPERWIKI_DATABASE_NAME"] = "data.sqlite"
 
 # conn = sqlite3.connect('data.sqlite')
 # c = conn.cursor
@@ -60,11 +64,11 @@ def get_date_summary(rows, formatted_date):
                         pattern = re.compile("^.*evot\.nominal\?idv=.*$")
                         if pattern.match(link):
                             ids.append((re.search("evot\.nominal\?idv=(.*)\&idl=2", link).group(1)))
-                # c.execute("insert into data values ({}, {}, {}, {}, {}, {}, {}, {}, {})").format(
-                # formatted_date,
-                # *out
-                # )
-                # c.commit()
+                scraperwiki.sql.execute("insert into data values ({}, {}, {}, {}, {}, {}, {}, {}, {})").format(
+                formatted_date,
+                *out
+                )
+                c.commit()
                 if len(description_fragment) > 0:
                     out[3] = "{}. {}".format(description_fragment, out[3])
                 description_fragment = ""
@@ -84,11 +88,11 @@ def get_voting_summary(rows, id):
                 txt = td.text_content().replace("\n", " ").replace("\s+", " ").strip()
                 out.append(txt)
             # print(out)
-            # c.execute("insert into votes values ({}, {}, {}, {})").format(
-            # id,
-            # *out
-            # )
-            # c.commit()
+            scraperwiki.sql.execute("insert into votes values ({}, {}, {}, {})").format(
+            id,
+            *out
+            )
+            c.commit()
             print(out)
             writer.writerow(out)
 
