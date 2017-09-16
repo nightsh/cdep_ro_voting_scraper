@@ -77,7 +77,7 @@ def get_date_summary(rows, formatted_date):
 def get_voting_summary(rows, id):
     with open('votes.csv', 'a') as f:
         writer = csv.writer(f)
-        for row in rows[1:]:
+        for row in rows:
             out = [id]
             cells = row.xpath("td")
             for td in cells:
