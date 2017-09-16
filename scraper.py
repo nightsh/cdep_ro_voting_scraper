@@ -64,10 +64,8 @@ def get_date_summary(rows, formatted_date):
                         pattern = re.compile("^.*evot\.nominal\?idv=.*$")
                         if pattern.match(link):
                             ids.append((re.search("evot\.nominal\?idv=(.*)\&idl=2", link).group(1)))
-                scraperwiki.sql.execute("insert into data values ({}, {}, {}, {}, {}, {}, {}, {}, {})").format(
-                formatted_date,
-                *out
-                )
+                values = [formatted_date]
+                scraperwiki.sql.execute("insert into data values (?, ?, ?, ?, ?, ?, ?, ?, ?)", values.extend(out))
                 c.commit()
                 if len(description_fragment) > 0:
                     out[3] = "{}. {}".format(description_fragment, out[3])
@@ -88,10 +86,8 @@ def get_voting_summary(rows, id):
                 txt = td.text_content().replace("\n", " ").replace("\s+", " ").strip()
                 out.append(txt)
             # print(out)
-            scraperwiki.sql.execute("insert into votes values ({}, {}, {}, {})").format(
-            id,
-            *out
-            )
+            values = [id]
+            scraperwiki.sql.execute("insert into data values (?, ?, ?, ?)", values.extend(out))
             c.commit()
             print(out)
             writer.writerow(out)
