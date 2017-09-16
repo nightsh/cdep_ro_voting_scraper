@@ -33,7 +33,7 @@ import csv
 #         vote    text)""")
 # conn.commit()
 
-min_date = date(2016, 12, 11)
+min_date = date(2001, 1, 1)
 max_date = date(2017, 9, 16)
 
 ids = []
